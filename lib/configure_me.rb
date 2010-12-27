@@ -1,0 +1,3 @@
+module ConfigureMe
+  # Your code goes here...
+end
