@@ -1,0 +1,112 @@
+## ConfigureMe
+
+A really simple gem for helping to manage dynamic application configuration.
+
+### Installation
+    gem "configure_me"
+
+### Usage
+Using ConfigureMe is easy.  First, derive a class from ConfigureMe::Base.  Then define your settings just as you would attributes.
+
+    class AppConfig < ConfigureMe::Base
+      setting :timeout
+      setting :max_items
+    end
+
+Settings can also be given default values:
+
+    class AppConfig < ConfigureMe::Base
+      setting :min_password_length, :default => 8
+    end
+
+To access the settings, just reference the class's *instance* method, followed by the name of the setting:
+
+    # AppConfig.instance.min_password_length
+    => 8
+
+Changes to the configuration are made the same way:
+
+    # AppConfig.instance.min_password_length = 6
+    => 6
+    # AppConfig.instance.min_password_length
+    => 6
+
+### Nesting
+You can also nest configuration classes.  To nest one config under another, just call *nest_me* from inside the nested class, passing it the class you would like to nest it under.  When an instance of the parent class is created, an instance of the nested class will be instantiated at the same time.
+
+    class MainConfig < ConfigureMe::Base
+      setting :site_name, :default => "Ninja Robot Monkeys"
+    end
+
+    class ExtensionConfig < ConfigureMe::Base
+      nest_me(MainConfig)
+      setting :secret_weapon, :default => "throwing star"
+    end
+
+    # MainConfig.instance.extension.secret_weapon
+    => "throwing star"
+
+The default behaviour when nesting is to use the name of the nested class (excluding "Config") to create the accessor method.  To override this behavior, just pass the alternate name to *nest_me*
+
+    class ExtensionConfig < ConfigureMe::Base
+      nest_me MainConfig, 'altextension'
+      ...
+    end
+
+    # AppConfig.instance.altextension.secret_weapon
+    => "throwing star"
+
+## Persisting
+An easily editable configuration doesn't do any good without persisting it.  To store our configuration settings in the database, we need to generate an ActiveRecord model to store our settings.
+
+    # rails g configure_me Setting
+
+This will create a model/migration, and an initializer to let ConfigureMe know what model it should use for persisting.  You can call the model whatever you want, so long as you pass the correct name in the initializer.  All that's left is to tell ConfigureMe to actually persist our configuration.  And its a one-liner:
+
+    class AppConfig < ConfigureMe::Base
+      ...
+      persist_me
+    end
+
+Now, when updating any setting, the new value will be written to the database as well as stored in memory.   Settings are converted to YAML before being written, so complex values can be stored.  When accessing a setting, the database is always consulted first, and if no value is stored, the default is returned or, if no default was specified, nil.
+
+## Caching
+To really crank up the performance, you can enable caching of values.  If you're paying attention, the method to enable this should be obvious.
+
+    class AppConfig < ConfigureMe::Base
+      cache_me
+    end
+
+Now, when values are accessed, the cache will be referenced before falling back to other means.  If combined with *persist_me*, this can make dealing with dynamic site configuration perform much better than a database only solution.
+
+## Putting it all together
+
+Here's a complete configuration example:
+
+    class MainConfig < ConfigureMe::Base
+      persist_me
+      cache_me
+
+      setting :site_name
+      setting :admin_email
+      setting :theme, :default => 'spacecadet'
+    end
+
+    class UserConfig < ConfigureMe::Base
+      nest_me(MainConfig)
+      persist_me
+      cache_me
+
+      setting :min_username, :default => 8
+      setting :min_password, :default => 8
+    end
+
+With this setup, we'll have access to a total of 5 configuration options:
+
+    AppConfig.instance.site_name
+    AppConfig.instance.admin_email
+    AppConfig.instance.theme
+    AppConfig.instance.user.min_username
+    AppConfig.instance.user.min_password
+
+All of which will be stored in the database when modified, and read from the cache when possible.

@@ -1,11 +1,11 @@
 module ConfigureMe
   class Setting
-    attr_reader :name, :type, :default
+    attr_reader :name, :default
 
-    def initialize(owner, name, type, *args)
+    def initialize(owner, name, *args)
       options = args.extract_options!
 
-      @owner, @name, @type = owner, name.to_s, type
+      @owner, @name = owner, name.to_s
       @default = options.key?(:default) ? options[:default] : nil
     end
 
