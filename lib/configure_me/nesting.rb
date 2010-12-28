@@ -26,7 +26,7 @@ module ConfigureMe
     def nest(klass)
       @children[klass.config_name] = klass.instance
       klass.instance.parent = self
-      self.class_eval <<-EOF
+      self.class_eval <<-EOF, __FILE__, __LINE__
         def #{klass.config_name}
           @children['#{klass.config_name}']
         end

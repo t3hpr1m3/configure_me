@@ -41,7 +41,12 @@ module ConfigureMe
 
       if self.class.persisting?
         setting = ConfigureMe.persistence_klass.find_by_key(persistence_key(name))
-        return YAML::load(setting.value) unless setting.nil?
+        unless setting.nil?
+          value = YAML::load(setting.value)
+          Rails.cache.write(cache_key(name), value)
+          @settings[name.to_sym] = value
+          return value
+        end
       end
 
       @settings[name.to_sym]

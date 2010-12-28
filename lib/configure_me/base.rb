@@ -14,10 +14,11 @@ module ConfigureMe
     include Caching
     include Nesting
     include Singleton
+    extend ActiveModel::Naming
 
     class << self
       def config_name
-        self.name.gsub(/^(.*)Config$/, '\1').downcase
+        self.name.split('::').last.gsub(/^(.*)Config$/, '\1').downcase
       end
     end
 

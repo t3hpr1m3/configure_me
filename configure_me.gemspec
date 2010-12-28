@@ -8,9 +8,9 @@ Gem::Specification.new do |s|
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Josh Williams"]
   s.email       = ["theprime@codingprime.com"]
-  s.homepage    = ""
-  s.summary     = %q{TODO: Write a gem summary}
-  s.description = %q{TODO: Write a gem description}
+  s.homepage    = "http://www.github.com/t3hpr1m3/configure_me"
+  s.summary     = %q{Simple configuration library}
+  s.description = %q{Simple gem to assist with persisting configuration data.}
 
   s.rubyforge_project = "configure_me"
 
