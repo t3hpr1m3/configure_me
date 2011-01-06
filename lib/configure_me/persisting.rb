@@ -1,23 +1,23 @@
 require 'active_support/concern'
 
 module ConfigureMe
-  module Persistence
+  module Persisting
     extend ActiveSupport::Concern
 
-    included do
-      @persisting = false
-    end
+    #included do
+    #  @persisting = false
+    #end
 
     module ClassMethods
       def persist_me(persistence_key = nil)
         if ConfigureMe.persistence_klass.nil?
-          raise ::RuntimeError, "configure_me - persistence_klass is not set.  Make sure you have an initializer to assign it."
+          raise ::RuntimeError, "ConfigureMe: persistence_klass is not set.  Make sure you have an initializer to assign it."
         end
         @persisting = true
       end
 
       def persisting?
-        @persisting
+        @persisting ||= false
       end
 
       def persistence_key

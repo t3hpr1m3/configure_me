@@ -12,7 +12,7 @@ describe ConfigureMe::Base do
   describe 'with a "color" setting with a default of "red"' do
     before(:each) do
       @klass = Class.new(ConfigureMe::Base)
-      @klass.send :setting, :color, :default => 'red'
+      @klass.send :setting, :color, :string, :default => 'red'
     end
 
     describe 'an instance ' do
@@ -55,7 +55,7 @@ describe ConfigureMe::Base do
       @klass = TestConfig
       @persistence = mock('PersistenceClass')
       ConfigureMe.persist_with @persistence
-      @klass.send :setting, :color, :default => 'red'
+      @klass.send :setting, :color, :string, :default => 'red'
       @klass.send :persist_me
     end
 
@@ -82,11 +82,6 @@ describe ConfigureMe::Base do
         end
         @persistence.stubs(:find_or_create_by_key).returns(@unpersisted)
         @obj.color = "blue"
-      end
-
-      it 'should return the default value' do
-        @persistence.stubs(:find_by_key).returns(nil)
-        @obj.color.should eql('red')
       end
     end
 

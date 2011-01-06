@@ -9,8 +9,8 @@ module ConfigureMe
     end
 
     module ClassMethods
-      def setting(name, options = {})
-        new_setting = Setting.new(self, name, options)
+      def setting(name, type, options = {})
+        new_setting = Setting.new(self, name, type, options)
         class_settings[name] = new_setting
         new_setting.define_methods!
       end
@@ -34,29 +34,31 @@ module ConfigureMe
     end
 
     def read_setting(name)
+      value = nil
       if self.class.caching?
-        setting = Rails.cache.read(cache_key(name))
-        return setting unless setting.nil?
+        value = Rails.cache.read(cache_key(name))
       end
 
-      if self.class.persisting?
+      if self.class.persisting? && value.nil?
         setting = ConfigureMe.persistence_klass.find_by_key(persistence_key(name))
         unless setting.nil?
           value = YAML::load(setting.value)
-          Rails.cache.write(cache_key(name), value)
+          if self.class.caching?
+            Rails.cache.write(cache_key(name), value)
+          end
           @settings[name.to_sym] = value
-          return value
         end
       end
 
-      @settings[name.to_sym]
+      value = @settings[name.to_sym] if value.nil?
+      self.class.class_settings[name.to_sym].convert(value)
     end
 
     def write_setting(name, value)
       if self.class.class_settings[name]
         @settings[name.to_sym]  = value
       else
-        raise NoMethodError, "Unknown setting: #{name.inspect}"
+        raise NoMethodError, "ConfigureMe: Unknown setting: #{name.inspect}"
       end
 
       if self.class.caching?

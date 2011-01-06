@@ -5,9 +5,10 @@ module ConfigureMe
     end
 
     def persistence_klass
-      @persistence_klass ||= nil
+      @persistence_klass ||= ::Setting
     end
   end
 end
+
 require 'configure_me/setting'
 require 'configure_me/base'

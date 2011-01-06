@@ -5,7 +5,7 @@ describe ConfigureMe::Setting do
     @owner = mock('owner') do
       stubs(:define_attribute_methods)
     end
-    @setting = ConfigureMe::Setting.new(@owner, :foo, :default => 'bar')
+    @setting = ConfigureMe::Setting.new(@owner, :foo, :string, :default => 'bar')
   end
 
   it { @setting.should respond_to(:name) }
@@ -17,7 +17,7 @@ describe ConfigureMe::Setting do
     owner = mock('owner') do
       expects(:define_attribute_methods).with(true)
     end
-    setting = ConfigureMe::Setting.new(owner, :foo, :default => 'bar')
+    setting = ConfigureMe::Setting.new(owner, :foo, :string, :default => 'bar')
     setting.define_methods!
   end
 end
