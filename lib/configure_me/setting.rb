@@ -5,7 +5,7 @@ module ConfigureMe
     def initialize(owner, name, type, *args)
       options = args.extract_options!
 
-      @owner, @name, @type = owner, name.to_s
+      @owner, @name, @type = owner, name.to_s, type
       @default = options.key?(:default) ? options[:default] : nil
     end
 
@@ -20,6 +20,7 @@ module ConfigureMe
       when :integer   then value.to_i rescue value ? 1 : 0
       when :float     then value.to_f
       when :date      then ActiveRecord::ConnectionAdapters::Column.string_to_date(value)
+      when :boolean   then ActiveRecord::ConnectionAdapters::Column.value_to_boolean(value)
       else value
       end
     end
