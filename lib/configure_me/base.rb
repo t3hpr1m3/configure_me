@@ -18,7 +18,7 @@ module ConfigureMe
 
     class << self
       def config_name
-        self.name.split('::').last.gsub(/^(.*)Config$/, '\1').downcase
+        self.name.split('::').last.gsub(/^(.*)Config$/, '\1').underscore
       end
 
       def from_hash(root, config)
