@@ -1,5 +1,6 @@
 require 'active_model'
 require 'active_support/core_ext/hash/indifferent_access'
+require 'active_support/core_ext/kernel/singleton_class'
 require 'singleton'
 require 'configure_me/settings'
 require 'configure_me/nesting'
@@ -22,9 +23,6 @@ module ConfigureMe
       end
 
       def from_hash(root, config)
-        if root.nil?
-          root = const_set("RootConfig", Class.new(ConfigureMe::Base))
-        end
 
         # Determine how many root keys there are.
         #
@@ -33,10 +31,13 @@ module ConfigureMe
         #
         # If only one, just assign the values to the root config
         if config.keys.length > 1
+          if root.nil?
+            root = define_custom_class('RootConfig')
+          end
           config.each_pair do |key, value|
             if value.is_a?(Hash)
               klass_name = "#{key}_config".camelize
-              c = root.const_set(klass_name, Class.new(ConfigureMe::Base))
+              c = define_custom_class("#{key}_config".camelize)
               from_hash(c, value)
               c.send :nest_me, root
             else
@@ -45,25 +46,46 @@ module ConfigureMe
           end
           root
         else
+          if const_defined?(config.keys.first.to_s.camelize)
+            remove_const(config.keys.first.to_s.camelize.to_sym)
+          end
+          root = const_set(config.keys.first.to_s.camelize, Class.new(ConfigureMe::Base))
           from_hash(root, config.values.first)
         end
       end
 
-      def load(config)
-        case config
+      def load(*args)
+        case args.first
         when Hash
-          from_hash(nil, config)
+          from_hash(nil, args.first)
         else
-          raise ::ArgumentError, "ConfigureMe: Not sure how to load type [#{config.class}]"
+          raise ::ArgumentError, "ConfigureMe: Not sure how to load type [#{args.class}]"
         end
       end
 
-      def method_missing(method, *args)
-        if instance.respond_to?(method)
-          instance.send(method, *args)
+      def method_missing(method_sym, *args)
+        if instance.respond_to?(method_sym)
+          instance.send(method_sym, *args)
         else
           super
         end
+      end
+
+      def respond_to?(method_sym, include_private = false)
+        nested.each do |klass|
+          if klass.config_name.eql?(method_sym.to_s)
+            return true
+          end
+        end
+        if class_settings.key?(method_sym)
+          return true
+        end
+        super
+      end
+
+      def define_custom_class(name)
+        remove_const(name.to_sym) if const_defined?(name)
+        const_set(name, Class.new(ConfigureMe::Base))
       end
     end
 
