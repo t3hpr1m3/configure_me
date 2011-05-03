@@ -1,11 +1,11 @@
-## ConfigureMe
+= ConfigureMe
 
 A really simple gem for helping to manage dynamic application configuration.
 
-### Installation
+== Installation
     gem "configure_me"
 
-### Usage
+== Usage
 Using ConfigureMe is easy.  First, derive a class from ConfigureMe::Base.  Then define your settings just as you would attributes.
 
     class AppConfig < ConfigureMe::Base
@@ -31,7 +31,7 @@ Changes to the configuration are made the same way:
     # AppConfig.instance.min_password_length
     => 6
 
-### Nesting
+=== Nesting
 You can also nest configuration classes.  To nest one config under another, just call *nest_me* from inside the nested class, passing it the class you would like to nest it under.  When an instance of the parent class is created, an instance of the nested class will be instantiated at the same time.
 
     class MainConfig < ConfigureMe::Base
@@ -56,7 +56,7 @@ The default behaviour when nesting is to use the name of the nested class (exclu
     # AppConfig.instance.altextension.secret_weapon
     => "throwing star"
 
-## Persisting
+=== Persisting
 An easily editable configuration doesn't do any good without persisting it.  To store our configuration settings in the database, we need to generate an ActiveRecord model to store our settings.
 
     # rails g configure_me Setting
@@ -70,7 +70,7 @@ This will create a model/migration, and an initializer to let ConfigureMe know w
 
 Now, when updating any setting, the new value will be written to the database as well as stored in memory.   Settings are converted to YAML before being written, so complex values can be stored.  When accessing a setting, the database is always consulted first, and if no value is stored, the default is returned or, if no default was specified, nil.
 
-## Caching
+=== Caching
 To really crank up the performance, you can enable caching of values.  If you're paying attention, the method to enable this should be obvious.
 
     class AppConfig < ConfigureMe::Base
@@ -79,7 +79,7 @@ To really crank up the performance, you can enable caching of values.  If you're
 
 Now, when values are accessed, the cache will be referenced before falling back to other means.  If combined with *persist_me*, this can make dealing with dynamic site configuration perform much better than a database only solution.
 
-## Putting it all together
+=== Putting it all together
 
 Here's a complete configuration example:
 

@@ -1,14 +1,7 @@
-require 'active_support/concern'
-
 module ConfigureMe
-  module Nesting
-    extend ActiveSupport::Concern
-
-    included do
+  class Base
+    class << self
       @@nested = []
-    end
-
-    module ClassMethods
       def nest_me(klass, name = nil)
         klass.nest(self)
         @nested_name = name || klass.config_name
@@ -22,7 +15,9 @@ module ConfigureMe
         nested << klass
       end
     end
+  end
 
+  module Nesting
     def nest(klass)
       @children[klass.config_name] = klass.instance
       klass.instance.parent = self

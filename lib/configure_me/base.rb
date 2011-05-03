@@ -2,14 +2,24 @@ require 'active_model'
 require 'active_support/core_ext/hash/indifferent_access'
 require 'active_support/core_ext/kernel/singleton_class'
 require 'singleton'
+require 'configure_me/setting'
 require 'configure_me/settings'
 require 'configure_me/nesting'
 require 'configure_me/persisting'
 require 'configure_me/caching'
 
 module ConfigureMe
+  class << self
+    def persist_with(klass)
+      @persistence_klass = klass
+    end
+
+    def persistence_klass
+      @persistence_klass ||= ::Setting
+    end
+  end
+
   class Base
-    include ActiveModel::AttributeMethods
     include Settings
     include Nesting
     include Persisting
@@ -41,7 +51,7 @@ module ConfigureMe
               from_hash(c, value)
               c.send :nest_me, root
             else
-              root.send :setting, key, :string, :default => value
+              root.send :setting, key, :default => value
             end
           end
           root

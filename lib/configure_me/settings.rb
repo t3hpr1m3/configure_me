@@ -1,18 +1,14 @@
-require 'active_support/concern'
-
 module ConfigureMe
-  module Settings
-    extend ActiveSupport::Concern
+  class Base
+    include ActiveModel::AttributeMethods
 
-    included do
-      attribute_method_suffix('', '=')
-    end
+    attribute_method_suffix('', '=')
 
-    module ClassMethods
-      def setting(name, type, options = {})
-        new_setting = Setting.new(self, name, type, options)
+    class << self
+      def setting(name, options = {})
+        new_setting = Setting.new(self, name, options)
         class_settings[name] = new_setting
-        new_setting.define_methods!
+        define_attribute_methods(true)
       end
 
       def class_settings
@@ -25,7 +21,9 @@ module ConfigureMe
         super(class_settings.keys)
       end
     end
+  end
 
+  module Settings
     def settings_from_class_settings
       self.class.class_settings.inject({}.with_indifferent_access) do |settings, (name, setting)|
         settings[name] = setting.default
