@@ -12,17 +12,19 @@ module ConfigureMe
         @persisting ||= false
       end
 
-      def persistence_key
-        self.config_name
+      def persistence_key(name)
+        key = "#{self.config_name}_#{name.to_s}"
+        key = @parent.persistence_key(key) unless @parent.nil?
+        key
       end
     end
   end
 
   module Persisting
-    def persistence_key(name)
-      key = "#{self.class.persistence_key}_#{name.to_s}"
-      key = @parent.persistence_key(key) unless @parent.nil?
-      key
+    def read_persist(name)
+    end
+
+    def write_persist(name, value)
     end
   end
 end
