@@ -22,6 +22,17 @@ module ConfigureMe
 
   module Persisting
     def read_persist(name)
+      if self.class.persisting?
+        setting = ConfigureMe.persistence_klass.find_by_key(self.class.persistence_key(name))
+
+        unless setting.nil?
+          value = YAML.load(setting.value)
+          self.write_cache(name, value)
+          @settings[name.to_sym] = value
+        end
+      else
+        nil
+      end
     end
 
     def write_persist(name, value)
