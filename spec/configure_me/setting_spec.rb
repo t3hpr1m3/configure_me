@@ -1,11 +1,9 @@
 require 'spec_helper'
 
 describe ConfigureMe::Setting do
-  class TestConfig < ConfigureMe::Base
-  end
 
   def mock_setting(name, *args)
-    ConfigureMe::Setting.new(TestConfig, name, *args)
+    ConfigureMe::Setting.new(name, *args)
   end
 
   describe 'an instance' do
@@ -59,7 +57,7 @@ describe ConfigureMe::Setting do
     context 'with an unsupported default value' do
       it 'should raise an exception' do
         lambda {
-          ConfigureMe::Setting.new(TestConfig, :foo, :default => {:invalid => 'hash'})
+          ConfigureMe::Setting.new(:foo, :default => {:invalid => 'hash'})
         }.should raise_error(ConfigureMe::InvalidDefault)
       end
     end

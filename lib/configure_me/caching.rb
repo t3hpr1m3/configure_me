@@ -1,6 +1,10 @@
 module ConfigureMe
-  class Base
-    class << self
+  module Caching
+    def self.included(base)
+      base.extend(ClassMethods)
+    end
+
+    module ClassMethods
       def cache_me
         @caching = true
       end
@@ -10,12 +14,11 @@ module ConfigureMe
       end
 
       def cache_key(name)
-        persistence_key(name)
+        key = "#{self.config_name}_#{name.to_s}"
+        key = parent_config.class.cache_key(key) unless parent_config.nil?
+        key
       end
     end
-  end
-
-  module Caching
     def write_cache(name, value)
       if defined?(Rails) && self.class.caching?
         Rails.cache.write(self.class.cache_key(name), value)

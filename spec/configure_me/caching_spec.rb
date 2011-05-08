@@ -1,25 +1,31 @@
 require 'spec_helper'
 
 describe ConfigureMe::Caching do
-  class CachingConfig < ConfigureMe::Base
-    setting :cachingsetting, :type => :string, :default => 'mydefault'
-    cache_me
+
+  class NonCachingConfig < BaseTestConfig
+    include ConfigureMe::Caching
   end
 
-  class NonCachingConfig < ConfigureMe::Base
-    setting :noncachingsetting, :type => :string, :default => 'noncache'
+  class CachingConfig < BaseTestConfig
+    include ConfigureMe::Caching
+    cache_me
   end
 
   describe "the class" do
     subject { CachingConfig }
     it { should respond_to(:cache_key) }
     it 'should generate a valid cache key' do
+      subject.stubs(:parent_config).returns(nil)
       subject.cache_key('mydefault').should eql('caching_mydefault')
     end
   end
 
   describe "an instance" do
-    subject { CachingConfig.instance }
+    before {
+      @config = CachingConfig.new
+      @config.class.stubs(:parent_config).returns(nil)
+    }
+    subject { @config }
     it { should respond_to(:write_cache) }
     it { should respond_to(:read_cache) }
 
@@ -31,7 +37,8 @@ describe ConfigureMe::Caching do
         Object.const_set('Rails', Class.new(Object))
       end
       context 'and caching is disabled' do
-        subject { NonCachingConfig.instance }
+        before { @config = NonCachingConfig.new }
+        subject { @config }
         describe 'read_cache' do
           it 'should not attempt to read from the cache' do
             Rails.expects(:cache).never
@@ -51,7 +58,8 @@ describe ConfigureMe::Caching do
       end
 
       context 'and caching is enabled' do
-        subject { CachingConfig.instance }
+        before { @config = CachingConfig.new }
+        subject { @config }
         describe 'read_cache' do
           before(:each) do
             @reader = mock('reader') do
@@ -87,7 +95,8 @@ describe ConfigureMe::Caching do
         end
       end
       context 'and caching is disabled' do
-        subject { NonCachingConfig.instance }
+        before { @config = NonCachingConfig.new }
+        subject { @config }
         describe 'read_cache' do
           it 'should not attempt to read from the cache' do
             subject.class.expects(:cache_key).never
@@ -107,7 +116,8 @@ describe ConfigureMe::Caching do
       end
 
       context 'and caching is enabled' do
-        subject { CachingConfig.instance }
+        before { @config = CachingConfig.new }
+        subject { @config }
         describe 'read_cache' do
           it 'should not attempt to read from the cache' do
             subject.class.expects(:cache_key).never

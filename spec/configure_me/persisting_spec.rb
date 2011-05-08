@@ -1,31 +1,44 @@
 require 'spec_helper'
 
 describe ConfigureMe::Persisting do
-  class Setting; end
-  class PersistingConfig < ConfigureMe::Base
-    setting :persistedsetting, :type => :string, :default => 'persisted'
+  class BasePersistingConfig < BaseTestConfig
+    include ConfigureMe::Persisting
+  end
+  class DummyConfig < BasePersistingConfig; end
+  class PersistingConfig < BasePersistingConfig
     persist_me
   end
 
-  class NonPersistingConfig < ConfigureMe::Base
-    setting :nonpersistedsetting, :type => :string, :default => 'nonpersisted'
+  class NonPersistingConfig < BasePersistingConfig
   end
 
   describe 'the class' do
     subject { PersistingConfig }
     it { should respond_to(:persistence_key) }
     it 'should generate a valid persistence key' do
+      subject.stubs(:parent_config).returns(nil)
       subject.persistence_key('persistedsetting').should eql('persisting_persistedsetting')
+    end
+    describe 'persist_me' do
+      it 'should raise an exception if the persistence_klass is nil' do
+        ConfigureMe.stubs(:persistence_klass).returns(nil)
+        lambda { DummyConfig.send(:persist_me) }.should raise_error(RuntimeError)
+      end
     end
   end
 
   describe 'an instance' do
-    subject { PersistingConfig.instance }
+    before {
+      @config = PersistingConfig.new
+      @config.class.stubs(:parent_config).returns(nil)
+    }
+    subject { @config }
     it { should respond_to(:write_persist) }
     it { should respond_to(:read_persist) }
 
     context 'when persisting is disabled' do
-      subject { NonPersistingConfig.instance }
+      before { @config = NonPersistingConfig.new }
+      subject { @config }
       describe 'read_persist' do
         it 'should not attempt to read the setting' do
           ConfigureMe.expects(:persistence_klass).never
@@ -41,15 +54,18 @@ describe ConfigureMe::Persisting do
     end
 
     context 'when persisting is enabled' do
-      before(:each) do
+      before {
+        @config = PersistingConfig.new
         @persistence_klass = mock('PersistenceKlass')
         ConfigureMe.stubs(:persistence_klass).returns(@persistence_klass)
-        @setting = mock('Setting') do
-          stubs(:value).returns('test'.to_yaml)
-        end
-      end
-      subject { PersistingConfig.instance }
+      }
+      subject { @config }
       describe 'read_persist' do
+        before(:each) do
+          @setting = mock('Setting') do
+            stubs(:value).returns('test'.to_yaml)
+          end
+        end
         it 'should attempt to read the setting' do
           @persistence_klass.expects(:find_by_key)
           subject.read_persist(:persistedsetting)
@@ -69,14 +85,29 @@ describe ConfigureMe::Persisting do
           it 'should return the converted value' do
             subject.read_persist(:persistedsetting).should eql('test')
           end
-          it 'should attempt to cache the converted value' do
-            subject.expects(:write_cache).with(:persistedsetting, 'test')
-            subject.read_persist(:persistedsetting)
+        end
+      end
+
+      describe 'write_persist' do
+        before(:each) do
+          @setting = mock('Setting') do
+            stubs(:value=)
+            stubs(:save!)
           end
-          it 'should store the converted value in the @settings hash' do
-            subject.read_persist(:persistedsetting)
-            subject.instance_variable_get(:@settings)[:persistedsetting].should eql('test')
-          end
+        end
+        it 'should attempt to find or create the setting' do
+          @persistence_klass.expects(:find_or_create_by_key).returns(@setting)
+          subject.write_persist(:persistedsetting, 'newvalue')
+        end
+        it 'should attempt to update the setting' do
+          @setting.expects(:value=).with('newvalue'.to_yaml)
+          @persistence_klass.stubs(:find_or_create_by_key).returns(@setting)
+          subject.write_persist(:persistedsetting, 'newvalue')
+        end
+        it 'should save the setting after update' do
+          @setting.expects(:save!).returns(true)
+          @persistence_klass.stubs(:find_or_create_by_key).returns(@setting)
+          subject.write_persist(:persistedsetting, 'newvalue')
         end
       end
     end
