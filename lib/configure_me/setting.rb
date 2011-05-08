@@ -1,4 +1,4 @@
-require 'active_record/connection_adapters/abstract/schema_definitions'
+require 'active_support/core_ext/object/blank'
 
 module ConfigureMe
   class InvalidDefault < StandardError; end
@@ -15,10 +15,10 @@ module ConfigureMe
     VALID_TYPES = [:string, :integer, :float, :boolean, :unknown]
     TRUE_VALUES = [true, 1, '1', 't', 'T', 'true', 'TRUE']
 
-    def initialize(owner, name, *args)
+    def initialize(name, *args)
       options = args.extract_options!
 
-      @owner, @name = owner, name.to_s
+      @name = name.to_s
       @default = options.key?(:default) ? options[:default] : nil
       @type = options.key?(:type) ? options[:type] : infer_type(@default)
       raise UnsupportedType.new("Invalid type: #{@type}") unless VALID_TYPES.include?(@type)
