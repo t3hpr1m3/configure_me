@@ -1,53 +1,46 @@
 require 'spec_helper'
 
 describe ConfigureMe do
-  class Setting; end
-  class Setting2; end
-  it { should respond_to(:persist_with) }
+  it { should respond_to(:init) }
   it { should respond_to(:persistence_klass) }
-  it 'should default to ::Setting for the persistence_klass' do
-    ConfigureMe.persist_with(nil)
-    ConfigureMe.persistence_klass.should eql(::Setting)
+  it { should respond_to(:cache_object) }
+  it 'should provide nil defaults for :init' do
+    ConfigureMe.init
+    ConfigureMe.persistence_klass.should be_nil
+    ConfigureMe.cache_object.should be_nil
   end
-  it 'should update @persistence_klass when persist_with is called' do
-    ConfigureMe.persist_with(Setting2)
-    ConfigureMe.persistence_klass.should eql(Setting2)
+
+  it 'should accept a hash of initialization arguments' do
+    ConfigureMe.init(:persist_with => 'foo', :cache_with => 'bar')
+    ConfigureMe.persistence_klass.should eql('foo')
+    ConfigureMe.cache_object.should eql('bar')
   end
 end
 
 describe ConfigureMe::Base do
+  it 'should enforce the singleton pattern' do
+    lambda { ConfigureMe::Base.new }.should raise_error(NoMethodError)
+  end
 
-  class TestConfig < ConfigureMe::Base
+  class BaseConfig < ConfigureMe::Base
     setting :setting1, :type => :integer, :default => 12
   end
 
-  class ParentConfig < ConfigureMe::Base
-  end
+  subject { BaseConfig.instance }
+  its(:persisted?) { should be_true }
+  its(:class) { should respond_to(:setting1) }
 
   describe 'ActiveModel compliance' do
-    before { @config = TestConfig.send :new }
+    before { @config = define_test_class('TestConfig', ConfigureMe::Base).instance }
     subject { @config }
     it_should_behave_like "ActiveModel"
-  end
-
-  context 'an instance' do
-    subject { TestConfig.instance }
-    its(:to_key) { should eql(['test']) }
-    its(:to_param) { should eql('test') }
-    it 'should respond to known settings' do
-      TestConfig.setting1.should eql(12)
-    end
-
-    it 'should fire method_missing for unknown settings' do
-      lambda { TestConfig.setting2 }.should raise_error(NoMethodError)
-    end
   end
 
   describe 'find_by_id' do
     subject { ConfigureMe::Base }
     before {
       @mock_config = mock('Config') do
-        stubs(:nested_name).returns('the-right-one')
+        stubs(:config_key).returns('the-right-one')
         stubs(:instance).returns('instance')
       end
       @configs = [@mock_config]

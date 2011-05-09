@@ -10,7 +10,7 @@ RSpec.configure do |config|
   config.mock_with :mocha
 end
 
-class Setting; end
-class BaseTestConfig
-  include ConfigureMe::Naming
+def define_test_class(name, base)
+  Object.send(:remove_const, name.to_sym) if Object.const_defined?(name)
+  Object.const_set(name, Class.new(base))
 end

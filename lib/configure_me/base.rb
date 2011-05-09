@@ -1,33 +1,18 @@
-require 'active_model'
-require 'singleton'
-require 'configure_me/attribute_methods'
-require 'configure_me/caching'
-require 'configure_me/loading'
-require 'configure_me/naming'
-require 'configure_me/nesting'
-require 'configure_me/persisting'
-require 'configure_me/setting'
+
 
 module ConfigureMe
-  class << self
-    def persist_with(klass)
-      @persistence_klass = klass
-    end
-
-    def persistence_klass
-      @persistence_klass ||= ::Setting
-    end
-  end
 
   class Base
+    extend ActiveModel::Callbacks
     include AttributeMethods
-    include Nesting
-    include Naming
-    include Persisting
     include Caching
-    include Singleton
+    include Identity
+    include Naming
+    include Nesting
+    include Persistence
+    include Persisting
+    include Validations
     extend Loading
-    include ActiveModel::Validations
     include ActiveModel::Conversion
 
     def persisted?
@@ -37,7 +22,7 @@ module ConfigureMe
     def to_key
       if persisted?
         key = parent_config.nil? ? [] : parent_config.to_key
-        key << self.class.config_name
+        key << self.config_name
         key
       else
         nil
@@ -56,10 +41,6 @@ module ConfigureMe
       def inherited(subclass)
         super
         configs << subclass
-      end
-
-      def config_name
-        self.name.split('::').last.gsub(/^(.*)Config$/, '\1').underscore
       end
 
       def method_missing(method_sym, *args)
@@ -84,7 +65,7 @@ module ConfigureMe
 
       def find_by_id(id)
         configs.each do |config|
-          if config.nested_name.eql?(id)
+          if config.config_key.eql?(id)
             return config.instance
           end
         end

@@ -1,140 +1,75 @@
 require 'spec_helper'
 
-describe ConfigureMe::Caching do
+describe ConfigureMe::Caching, 'the class' do
+  subject { ConfigureMe::Base }
+  it { should respond_to(:cache_me) }
+  it { should respond_to(:caching?) }
+end
 
-  class NonCachingConfig < BaseTestConfig
-    include ConfigureMe::Caching
+describe ConfigureMe::Caching, 'caching?' do
+  before {
+    @caching_class = define_test_class('CachingConfig', ConfigureMe::Base)
+    @caching_class.send(:cache_me)
+  }
+  subject { @caching_class }
+
+  context 'when cache_object is available' do
+    before { ConfigureMe.stubs(:cache_object).returns({}) }
+    specify { subject.caching?.should be_true }
   end
 
-  class CachingConfig < BaseTestConfig
-    include ConfigureMe::Caching
-    cache_me
+  context 'when cache_object is unavailable' do
+    before { ConfigureMe.stubs(:cache_object).returns(nil) }
+    specify { subject.caching?.should be_false }
   end
 
-  describe "the class" do
-    subject { CachingConfig }
-    it { should respond_to(:cache_key) }
-    it 'should generate a valid cache key' do
-      subject.stubs(:parent_config).returns(nil)
-      subject.cache_key('mydefault').should eql('caching_mydefault')
+end
+
+describe ConfigureMe::Caching, 'when caching is enabled' do
+  before {
+    @caching_class = define_test_class('CachingConfig', ConfigureMe::Base)
+    @caching_class.stubs(:caching?).returns(true)
+    @cache_object = mock('CacheObject') do
+      stubs(:read).returns('cached_value')
+      stubs(:write)
     end
+    ConfigureMe.stubs(:cache_object).returns(@cache_object)
+  }
+  subject { @caching_class.instance }
+
+  it 'should attempt to read from the cache' do
+    ConfigureMe.expects(:cache_object).once.returns(@cache_object)
+    subject.read_cache('cachedsetting')
   end
 
-  describe "an instance" do
-    before {
-      @config = CachingConfig.new
-      @config.class.stubs(:parent_config).returns(nil)
-    }
-    subject { @config }
-    it { should respond_to(:write_cache) }
-    it { should respond_to(:read_cache) }
+  it 'should return the value from the cache' do
+    subject.read_cache('cachedsetting').should eql('cached_value')
+  end
 
-    context 'when Rails.cache is defined' do
-      before(:each) do
-        if Object.const_defined?('Rails')
-          Object.send :remove_const, :Rails
-        end
-        Object.const_set('Rails', Class.new(Object))
-      end
-      context 'and caching is disabled' do
-        before { @config = NonCachingConfig.new }
-        subject { @config }
-        describe 'read_cache' do
-          it 'should not attempt to read from the cache' do
-            Rails.expects(:cache).never
-            subject.read_cache('noncachingsetting')
-          end
-          it 'should return nil' do
-            subject.read_cache('noncachingsetting').should be_nil
-          end
-        end
+  it 'should attempt to write to the cache' do
+    @cache_object.expects(:write).once
+    subject.write_cache('cachedsetting', 'newvalue')
+  end
+end
 
-        describe 'write_cache' do
-          it 'should not attempt to write to the cache' do
-            Rails.expects(:cache).never
-            subject.write_cache('noncachingsetting', 'foobar')
-          end
-        end
-      end
+describe ConfigureMe::Caching, 'when caching is disabled' do
+  before {
+    @caching_class = define_test_class('CachingConfig', ConfigureMe::Base)
+    @caching_class.stubs(:caching?).returns(false)
+  }
+  subject { @caching_class.instance }
 
-      context 'and caching is enabled' do
-        before { @config = CachingConfig.new }
-        subject { @config }
-        describe 'read_cache' do
-          before(:each) do
-            @reader = mock('reader') do
-              stubs(:read).returns('cachedvalue')
-            end
-          end
-          it 'should attempt to read from the cache' do
-            Rails.expects(:cache).returns(@reader)
-            subject.read_cache('cachingsetting')
-          end
-          it 'should return the cached value' do
-            Rails.stubs(:cache).returns(@reader)
-            subject.read_cache('cachingsetting').should eql('cachedvalue')
-          end
-        end
+  it 'should not attempt to read from the cache' do
+    ConfigureMe.expects(:cache_object).never
+    subject.read_cache('cachedsetting')
+  end
 
-        describe 'write_cache' do
-          it 'should attempt to write to the cache' do
-            writer = mock('writer') do
-              stubs(:write)
-            end
-            Rails.expects(:cache).once.returns(writer)
-            subject.write_cache('cachingsetting', 'foobar')
-          end
-        end
-      end
-    end
+  it 'should return nil when read_cache is called' do
+    subject.read_cache('cachedsetting').should be_nil
+  end
 
-    context 'when Rails is not defined' do
-      before(:each) do
-        if Object.const_defined?('Rails')
-          Object.send :remove_const, :Rails
-        end
-      end
-      context 'and caching is disabled' do
-        before { @config = NonCachingConfig.new }
-        subject { @config }
-        describe 'read_cache' do
-          it 'should not attempt to read from the cache' do
-            subject.class.expects(:cache_key).never
-            subject.read_cache('noncachingsetting')
-          end
-          it 'should return nil' do
-            subject.read_cache('noncachingsetting').should be_nil
-          end
-        end
-
-        describe 'write_cache' do
-          it 'should not attempt to write to the cache' do
-            subject.class.expects(:cache_key).never
-            subject.write_cache('noncachingsetting', 'foobar')
-          end
-        end
-      end
-
-      context 'and caching is enabled' do
-        before { @config = CachingConfig.new }
-        subject { @config }
-        describe 'read_cache' do
-          it 'should not attempt to read from the cache' do
-            subject.class.expects(:cache_key).never
-            subject.read_cache('cachingsetting')
-          end
-          it 'should return nil' do
-            subject.read_cache('cachingsetting').should be_nil
-          end
-        end
-
-        describe 'write_cache' do
-          it 'should not attempt to write to the cache' do
-            subject.class.expects(:cache_key).never
-            subject.write_cache('cachingsetting', 'foobar')
-          end
-        end
-      end
-    end
+  it 'should not attempt to write to the cache' do
+    ConfigureMe.expects(:cache_object).never
+    subject.write_cache('cachedsetting', 'newvalue')
   end
 end

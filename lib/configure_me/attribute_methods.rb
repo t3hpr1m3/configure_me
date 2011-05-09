@@ -1,18 +1,10 @@
-require 'active_record'
-
 module ConfigureMe
-  module AttributeMethods
+  class Base
+    include ActiveModel::AttributeMethods
+    include ActiveModel::Dirty
+    attribute_method_suffix('', '=', '_before_type_cast')
 
-    def self.included(base)
-      base.send(:include, ActiveModel::AttributeMethods)
-      base.send(:include, ActiveModel::Dirty)
-      base.send(:attribute_method_suffix, '', '=')
-      base.extend(ActiveModel::Callbacks)
-      base.send(:define_model_callbacks, :save)
-      base.extend(ClassMethods)
-    end
-
-    module ClassMethods
+    class << self
       def setting(name, *args)
         class_settings[name.to_sym] = Setting.new(name.to_sym, *args)
         define_attribute_methods(true)
@@ -28,34 +20,34 @@ module ConfigureMe
         super(class_settings.keys)
       end
     end
+  end
+  module AttributeMethods
 
-    def save
-      run_callbacks :save do
-        ActiveRecord::Base.transaction do
-          temp_attributes.each_pair do |k,v|
-            write_persist(k, v)
-          end
-        end
-        temp_attributes.each_pair do |k,v|
-          write_cache(k, v)
-        end
-        temp_attributes.clear
-        @changed_attributes.clear
-      end
-      true
+    def read_attribute(name)
+      name_sym = name.to_sym
+      value = attribute_before_type_cast(name)
+      self.class.class_settings[name_sym].convert(value)
     end
 
-    def update_attributes(new_attrs)
-      new_attrs.each_pair do |k,v|
-        send :attribute=, k, v
-      end
-      save
+    def write_attribute(name, value)
+      name_sym = name.to_sym
+      make_dirty(name_sym)
+      temp_attributes[name_sym] = value
     end
 
     private
 
     def temp_attributes
       @temp_attributes ||= {}
+    end
+
+    def make_dirty(name)
+      self.send("#{name.to_s}_will_change!")
+    end
+
+    def make_clean
+      temp_attributes.clear
+      @changed_attributes.clear if defined?(@changed_attributes)
     end
 
     def attributes
@@ -66,7 +58,7 @@ module ConfigureMe
       attrs
     end
 
-    def attribute(name)
+    def attribute_before_type_cast(name)
       name_sym = name.to_sym
       if self.send "#{name.to_s}_changed?".to_sym
         value = temp_attributes[name_sym]
@@ -82,14 +74,15 @@ module ConfigureMe
           value = self.class.class_settings[name_sym].default
         end
       end
+      value
+    end
 
-      self.class.class_settings[name_sym].convert(value)
+    def attribute(name)
+      read_attribute(name)
     end
 
     def attribute=(name, value)
-      name_sym = name.to_sym
-      self.send("#{name.to_s}_will_change!")
-      temp_attributes[name_sym] = value
+      write_attribute(name, value)
     end
   end
 end

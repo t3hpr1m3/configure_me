@@ -1,31 +1,22 @@
 module ConfigureMe
-  module Nesting
-    def self.included(base)
-      base.extend(ClassMethods)
-    end
-
-    module ClassMethods
+  class Base
+    class << self
       def nest_me(klass, name = nil)
         klass.instance.nest(self)
       end
     end
+  end
+
+  module Nesting
 
     def nest(klass)
-      children[klass.config_name] = klass.instance
+      children[klass.instance.config_name.to_sym] = klass.instance
       klass.instance.parent_config = self
-      self.instance_eval <<-EOF, __FILE__, __LINE__
-        def #{klass.config_name}
-          children['#{klass.config_name}']
+      self.class_eval <<-EOF, __FILE__, __LINE__
+        def #{klass.instance.config_name}
+          children[:#{klass.instance.config_name.to_s}]
         end
       EOF
-    end
-
-    def nested_name
-      if parent_config.nil?
-        self.class.config_name
-      else
-        "#{parent_config.nested_name}-#{self.class.config_name}"
-      end
     end
 
     def parent_config

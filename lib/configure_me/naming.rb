@@ -1,19 +1,18 @@
-require 'active_model/naming'
-
 module ConfigureMe
-  module Naming
-    def self.included(base)
-      base.extend(ActiveModel::Naming)
-      base.extend(ClassMethods)
-    end
+  class Base
+    extend ActiveModel::Naming
 
-    module ClassMethods
-      def config_name
-        self.name.split('::').last.gsub(/^(.*)Config$/, '\1').underscore
+    class << self
+      def model_name
+        if persisting?
+          ConfigureMe.persistence_klass.model_name
+        else
+          super
+        end
       end
     end
+  end
 
-    def to_param
-    end
+  module Naming
   end
 end

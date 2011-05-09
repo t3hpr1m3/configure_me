@@ -1,3 +1,5 @@
+require 'yaml'
+
 module ConfigureMe
   module Loading
     def from_hash(root, config)
@@ -24,10 +26,7 @@ module ConfigureMe
         end
         root
       else
-        if const_defined?(config.keys.first.to_s.camelize)
-          remove_const(config.keys.first.to_s.camelize.to_sym)
-        end
-        root = const_set(config.keys.first.to_s.camelize, Class.new(ConfigureMe::Base))
+        root = define_custom_class(config.keys.first.to_s.camelize)
         from_hash(root, config.values.first)
       end
     end
@@ -52,7 +51,7 @@ module ConfigureMe
 
     def define_custom_class(name)
       remove_const(name.to_sym) if const_defined?(name)
-      foo = const_set(name, Class.new(ConfigureMe::Base))
+      const_set(name, Class.new(ConfigureMe::Base))
     end
   end
 end
