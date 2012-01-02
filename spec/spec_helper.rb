@@ -1,4 +1,6 @@
 require 'rubygems'
+require 'simplecov'
+SimpleCov.start
 require 'bundler/setup'
 Bundler.require(:default)
 require 'rspec/core'
