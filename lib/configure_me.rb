@@ -1,5 +1,5 @@
 require 'active_model'
-require 'singleton'
+require 'active_support'
 
 module ConfigureMe
   class << self
@@ -17,15 +17,10 @@ module ConfigureMe
       @cache_object
     end
   end
-
-  class Base
-    include Singleton
-  end
 end
 
 require 'configure_me/attribute_methods'
 require 'configure_me/caching'
-require 'configure_me/identity'
 require 'configure_me/loading'
 require 'configure_me/naming'
 require 'configure_me/nesting'

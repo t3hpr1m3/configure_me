@@ -1,6 +1,8 @@
 module ConfigureMe
-  class Base
-    class << self
+  module Caching
+    extend ActiveSupport::Concern
+
+    module ClassMethods
       def cache_me
         @caching = true
       end
@@ -10,9 +12,7 @@ module ConfigureMe
         @caching && !ConfigureMe.cache_object.nil?
       end
     end
-  end
 
-  module Caching
     def read_cache(name)
       if self.class.caching?
         ConfigureMe.cache_object.read(self.storage_key(name))

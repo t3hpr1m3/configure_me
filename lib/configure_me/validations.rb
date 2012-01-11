@@ -1,9 +1,13 @@
 require 'active_model'
 
 module ConfigureMe
-  class Base
-    include ActiveModel::Validations
-    define_model_callbacks :validation
+  module Validations
+    extend ActiveSupport::Concern
+
+    included do
+      include ActiveModel::Validations
+      define_model_callbacks :validation
+    end
 
     def save(options={})
       run_callbacks :validation do
@@ -26,8 +30,5 @@ module ConfigureMe
         true
       end
     end
-  end
-
-  module Validations
   end
 end

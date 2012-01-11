@@ -1,9 +1,10 @@
 module ConfigureMe
-  class Base
-    extend ActiveModel::Callbacks
-    define_model_callbacks :save
-  end
   module Persistence
+    extend ActiveSupport::Concern
+
+    included do
+      define_model_callbacks :save
+    end
 
     def save(*)
       run_callbacks :save do

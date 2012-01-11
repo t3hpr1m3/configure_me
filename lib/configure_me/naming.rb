@@ -1,8 +1,13 @@
 module ConfigureMe
-  class Base
-    extend ActiveModel::Naming
+  module Naming
+    extend ActiveSupport::Concern
 
-    class << self
+    included do
+      extend ActiveModel::Naming
+      extend OverriddenClassMethods
+    end
+
+    module OverriddenClassMethods
       def model_name
         if persisting?
           ConfigureMe.persistence_klass.model_name
@@ -11,8 +16,5 @@ module ConfigureMe
         end
       end
     end
-  end
-
-  module Naming
   end
 end

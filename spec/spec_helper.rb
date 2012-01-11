@@ -1,6 +1,8 @@
 require 'rubygems'
 require 'simplecov'
-SimpleCov.start
+SimpleCov.start do
+  add_filter "/spec/"
+end
 require 'bundler/setup'
 Bundler.require(:default)
 require 'rspec/core'

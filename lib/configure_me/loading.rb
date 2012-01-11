@@ -50,8 +50,8 @@ module ConfigureMe
     private
 
     def define_custom_class(name)
-      remove_const(name.to_sym) if const_defined?(name)
-      const_set(name, Class.new(ConfigureMe::Base))
+      Object.send(:remove_const, name) if Object.const_defined?(name)
+      Object.const_set(name, Class.new(ConfigureMe::Base))
     end
   end
 end

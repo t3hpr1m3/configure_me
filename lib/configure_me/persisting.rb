@@ -1,6 +1,8 @@
 module ConfigureMe
-  class Base
-    class << self
+  module Persisting
+    extend ActiveSupport::Concern
+
+    module ClassMethods
       def persist_me
         @persisting = true
       end
@@ -10,9 +12,6 @@ module ConfigureMe
         @persisting && !ConfigureMe.persistence_klass.nil?
       end
     end
-  end
-
-  module Persisting
 
     def read_persist(name)
       if self.class.persisting?

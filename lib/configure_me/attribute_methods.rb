@@ -1,10 +1,15 @@
 module ConfigureMe
-  class Base
-    include ActiveModel::AttributeMethods
-    include ActiveModel::Dirty
-    attribute_method_suffix('', '=', '_before_type_cast')
+  module AttributeMethods
+    extend ActiveSupport::Concern
 
-    class << self
+    included do
+      include ActiveModel::AttributeMethods
+      include ActiveModel::Dirty
+      attribute_method_suffix('', '=', '_before_type_cast')
+      extend OverriddenClassMethods
+    end
+
+    module OverriddenClassMethods
       def setting(name, *args)
         class_settings[name.to_sym] = Setting.new(name.to_sym, *args)
         define_attribute_methods(true)
@@ -20,8 +25,6 @@ module ConfigureMe
         super(class_settings.keys)
       end
     end
-  end
-  module AttributeMethods
 
     def read_attribute(name)
       name_sym = name.to_sym
