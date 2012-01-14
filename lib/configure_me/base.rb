@@ -22,7 +22,6 @@ module ConfigureMe
       if persisted?
         key = parent_config.nil? ? [] : parent_config.to_key
         key << self.class.config_name
-        key
       else
         nil
       end
@@ -36,18 +35,20 @@ module ConfigureMe
       end
     end
 
-    def config_key
-      to_param
-    end
-
     def storage_key(name)
-      "#{config_key}-#{name.to_s}"
+      "#{to_param}-#{name.to_s}"
     end
 
     class << self
       def inherited(subclass)
         super
         configs << subclass
+      end
+
+      def config_key
+        key = parent_config_klass.nil? ? [] : parent_config_klass.config_key
+        key << self.config_name
+        key
       end
 
       def config_name
@@ -76,8 +77,7 @@ module ConfigureMe
 
       def find_by_id(id)
         configs.each do |config|
-          if config.config_key.eql?(id)
-            #return config.instance
+          if config.config_name.eql?(id)
             return config.new
           end
         end
