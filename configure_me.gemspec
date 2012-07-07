@@ -18,8 +18,7 @@ Gem::Specification.new do |s|
   s.test_files    = `git ls-files -- spec/*`.split("\n")
   s.require_paths = %w(lib)
 
-  s.add_dependency 'activerecord',    '~> 3.1.0'
-  s.add_dependency 'activesupport',   '~> 3.1.0'
+  s.add_dependency 'activesupport',   '> 3.1.0'
 
   s.add_development_dependency 'rspec',         '~> 2.7.0'
   s.add_development_dependency 'simplecov',     '~> 0.5.4'
